@@ -47,16 +47,29 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
+        // Custom luxury colors
+        luxury: {
+          black: "hsl(var(--luxury-black))",
+          charcoal: "hsl(var(--luxury-charcoal))",
+          gold: "hsl(var(--luxury-gold))",
+          "rose-gold": "hsl(var(--luxury-rose-gold))",
+          cream: "hsl(var(--luxury-cream))",
+          accent: "hsl(var(--luxury-accent))",
         },
+      },
+      backgroundImage: {
+        "gradient-hero": "var(--gradient-hero)",
+        "gradient-luxury": "var(--gradient-luxury)",
+        "gradient-card": "var(--gradient-card)",
+        "gradient-cta": "var(--gradient-cta)",
+      },
+      boxShadow: {
+        luxury: "var(--shadow-luxury)",
+        glow: "var(--shadow-glow)",
+        card: "var(--shadow-card)",
+      },
+      transitionTimingFunction: {
+        luxury: "cubic-bezier(0.4, 0, 0.2, 1)",
       },
       borderRadius: {
         lg: "var(--radius)",
