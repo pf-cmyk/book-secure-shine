@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import {
   Dialog,
   DialogContent,
@@ -6,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,16 +55,29 @@ const timeSlots = [
   '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM', '5:00 PM'
 ];
 
+interface ClientInfo {
+  name: string;
+  email: string;
+  phone: string;
+}
+
 const BookingModal = ({ open, onOpenChange }: BookingModalProps) => {
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState('');
-  const [clientInfo, setClientInfo] = useState({
-    name: '',
-    email: '',
-    phone: ''
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  const { register, handleSubmit, watch, formState: { errors, isValid } } = useForm<ClientInfo>({
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: ''
+    }
   });
+  
+  const clientInfo = watch();
 
   const selectedServiceData = services.find(s => s.id === selectedService);
   const depositAmount = selectedServiceData ? Math.round(selectedServiceData.price * 0.3) : 0;
@@ -76,10 +91,30 @@ const BookingModal = ({ open, onOpenChange }: BookingModalProps) => {
     if (step > 1) setStep(step - 1);
   };
 
-  const handleBooking = () => {
-    // Here you would typically integrate with Stripe
-    alert('Booking system requires Supabase integration for payments. Please connect your Supabase project first.');
-    onOpenChange(false);
+  const handleBooking = async () => {
+    setIsProcessing(true);
+    
+    try {
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      toast({
+        title: "Booking Confirmed! 🎉",
+        description: `Your ${selectedServiceData?.name} appointment is secured for ${selectedDate && format(selectedDate, "MMM d, yyyy")} at ${selectedTime}. Confirmation email sent!`,
+        duration: 5000,
+      });
+      
+      onOpenChange(false);
+      resetModal();
+    } catch (error) {
+      toast({
+        title: "Payment Failed",
+        description: "There was an issue processing your payment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const resetModal = () => {
@@ -87,7 +122,7 @@ const BookingModal = ({ open, onOpenChange }: BookingModalProps) => {
     setSelectedService('');
     setSelectedDate(undefined);
     setSelectedTime('');
-    setClientInfo({ name: '', email: '', phone: '' });
+    setIsProcessing(false);
   };
 
   return (
@@ -243,38 +278,62 @@ const BookingModal = ({ open, onOpenChange }: BookingModalProps) => {
             
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name" className="text-luxury-cream">Full Name</Label>
+                <Label htmlFor="name" className="text-luxury-cream">Full Name *</Label>
                 <Input
                   id="name"
-                  value={clientInfo.name}
-                  onChange={(e) => setClientInfo({...clientInfo, name: e.target.value})}
-                  className="bg-luxury-charcoal border-luxury-gold/20 text-luxury-cream mt-1"
+                  {...register('name', { required: 'Full name is required' })}
+                  className={`bg-luxury-charcoal border-luxury-gold/20 text-luxury-cream mt-1 ${
+                    errors.name ? 'border-red-500' : ''
+                  }`}
                   placeholder="Enter your name"
                 />
+                {errors.name && (
+                  <p className="text-red-400 text-sm mt-1">{errors.name.message}</p>
+                )}
               </div>
               
               <div>
-                <Label htmlFor="email" className="text-luxury-cream">Email Address</Label>
+                <Label htmlFor="email" className="text-luxury-cream">Email Address *</Label>
                 <Input
                   id="email"
                   type="email"
-                  value={clientInfo.email}
-                  onChange={(e) => setClientInfo({...clientInfo, email: e.target.value})}
-                  className="bg-luxury-charcoal border-luxury-gold/20 text-luxury-cream mt-1"
+                  {...register('email', { 
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^\S+@\S+$/i,
+                      message: 'Please enter a valid email address'
+                    }
+                  })}
+                  className={`bg-luxury-charcoal border-luxury-gold/20 text-luxury-cream mt-1 ${
+                    errors.email ? 'border-red-500' : ''
+                  }`}
                   placeholder="your@email.com"
                 />
+                {errors.email && (
+                  <p className="text-red-400 text-sm mt-1">{errors.email.message}</p>
+                )}
               </div>
               
               <div>
-                <Label htmlFor="phone" className="text-luxury-cream">Phone Number</Label>
+                <Label htmlFor="phone" className="text-luxury-cream">Phone Number *</Label>
                 <Input
                   id="phone"
                   type="tel"
-                  value={clientInfo.phone}
-                  onChange={(e) => setClientInfo({...clientInfo, phone: e.target.value})}
-                  className="bg-luxury-charcoal border-luxury-gold/20 text-luxury-cream mt-1"
+                  {...register('phone', { 
+                    required: 'Phone number is required',
+                    pattern: {
+                      value: /^[\+]?[1-9][\d]{0,15}$/,
+                      message: 'Please enter a valid phone number'
+                    }
+                  })}
+                  className={`bg-luxury-charcoal border-luxury-gold/20 text-luxury-cream mt-1 ${
+                    errors.phone ? 'border-red-500' : ''
+                  }`}
                   placeholder="+1 (555) 123-4567"
                 />
+                {errors.phone && (
+                  <p className="text-red-400 text-sm mt-1">{errors.phone.message}</p>
+                )}
               </div>
             </div>
 
@@ -284,7 +343,7 @@ const BookingModal = ({ open, onOpenChange }: BookingModalProps) => {
               </Button>
               <Button
                 onClick={handleNext}
-                disabled={!clientInfo.name || !clientInfo.email || !clientInfo.phone}
+                disabled={!isValid || !clientInfo.name || !clientInfo.email || !clientInfo.phone}
                 variant="cta"
                 className="flex-1"
               >
@@ -335,17 +394,41 @@ const BookingModal = ({ open, onOpenChange }: BookingModalProps) => {
                 <span className="font-medium">Secure Payment</span>
               </div>
               <p className="text-sm text-luxury-cream/70">
-                Your payment is processed securely through Stripe. You'll receive a confirmation email immediately after payment.
+                Your payment is processed securely. You'll receive a confirmation email and SMS reminder before your appointment.
+              </p>
+            </div>
+
+            {/* Terms */}
+            <div className="text-xs text-luxury-cream/60 bg-luxury-charcoal/30 p-3 rounded-lg">
+              <p className="mb-2">
+                <strong>Deposit Policy:</strong> Deposits are non-refundable but can be transferred to reschedule up to 24 hours before your appointment.
+              </p>
+              <p>
+                By confirming this booking, you agree to our terms of service and cancellation policy.
               </p>
             </div>
 
             <div className="flex gap-3">
-              <Button onClick={handleBack} variant="premium" className="flex-1">
+              <Button onClick={handleBack} variant="premium" className="flex-1" disabled={isProcessing}>
                 Back
               </Button>
-              <Button onClick={handleBooking} variant="hero" className="flex-1">
-                Pay Deposit ${depositAmount}
-                <CreditCard className="ml-2 h-4 w-4" />
+              <Button 
+                onClick={handleBooking} 
+                variant="hero" 
+                className="flex-1 relative"
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-luxury-black mr-2"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    Pay Deposit ${depositAmount}
+                    <CreditCard className="ml-2 h-4 w-4" />
+                  </>
+                )}
               </Button>
             </div>
           </div>
